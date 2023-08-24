@@ -52,11 +52,8 @@ router.post('/users', asyncHandler(async (req, res) => {
 
   // Route that will return the corresponding course including the User associated
   router.get('/courses/:id', asyncHandler( async (req,res) => {
-    const userID = req.params.id;
-    const course = await Course.findAll({
-      where: {
-        id: userID
-      },
+    const courseID = req.params.id;
+    const course = await Course.findByPk(courseID, {
       include: [
         {
           model: User, 
@@ -64,7 +61,11 @@ router.post('/users', asyncHandler(async (req, res) => {
         }
       ]
     });
+    if (course){
     res.json(course);
+    } else {
+       res.status(404).json({ "message": "Course not found!" });
+    }
   }));
 
   // Route that creates a new course.
@@ -84,14 +85,14 @@ router.post('/users', asyncHandler(async (req, res) => {
 
   // Route that will update the corresponding course
   router.put('/courses/:id', authenticateUser, asyncHandler( async (req, res) => {
-    const userID = req.params.id;
+    const courseID = req.params.id;
     try {
       await Course.update(req.body, {
         where: {
-          id: userID
+          id: courseID
         }
       });
-      res.status(204).json({ "message": "Course successfully updated!" });;
+      res.status(204).json({ "message": "Course successfully updated!" });
     } catch (error) {
       if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
         const errors = error.errors.map(err => err.message);
@@ -104,14 +105,14 @@ router.post('/users', asyncHandler(async (req, res) => {
 
     // Route that will delete the corresponding course
     router.delete('/courses/:id', authenticateUser ,asyncHandler( async (req, res) => {
-      const userID = req.params.id;
+      const courseID = req.params.id;
       try {
         await Course.destroy({
           where: {
-            id: userID
+            id: courseID
           }
         });        
-        res.status(204).json({ "message": "Course successfully deleted!" });;
+        res.status(204).json({ "message": "Course successfully deleted!" });
       } catch (error) {
         if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
           const errors = error.errors.map(err => err.message);
