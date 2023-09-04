@@ -26,7 +26,10 @@ router.get('/users', authenticateUser, asyncHandler(async (req, res) => {
 router.post('/users', asyncHandler(async (req, res) => {
     try {
       await User.create(req.body);
-      res.status(201).json({ "message": "User successfully created!" });
+      // Set the Location Header
+      res.location('/');      
+      // Return a 201 HTTP status code with no content
+      res.status(201).send();
     } catch (error) {
       if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
         const errors = error.errors.map(err => err.message);
@@ -71,8 +74,27 @@ router.post('/users', asyncHandler(async (req, res) => {
   // Route that creates a new course.
   router.post('/courses', authenticateUser,asyncHandler(async (req, res) => {
     try {
+      //console.log(req.body.title);
+      const title = req.body.title;
+      const description = req.body.description;
+      const userId = req.body.userId;
       await Course.create(req.body);
-      res.status(201).json({ "message": "Course successfully created!" });
+      //Select a course ID from the new course
+      const course = await Course.findOne({
+        attributes: ["id"],
+        where: {
+          title: title,
+          description: description,
+          userID: userId,
+        },
+        order: [["createdAt", "DESC"]],
+      });
+      if (course) {
+        // Set the Location header to the URI of the newly created course
+        res.location(`/courses/${course.id}`);
+        // Return a 201 HTTP status code with no content
+        res.status(201).send();
+      }
     } catch (error) {
       if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
         const errors = error.errors.map(err => err.message);
@@ -86,6 +108,14 @@ router.post('/users', asyncHandler(async (req, res) => {
   // Route that will update the corresponding course
   router.put('/courses/:id', authenticateUser, asyncHandler( async (req, res) => {
     const courseID = req.params.id;
+    const { title, description } = req.body;
+
+    if ( !title || !description) {
+      return res.status(400).json({ 
+        error: 'Title and description are required.' 
+      });
+    }
+
     try {
       await Course.update(req.body, {
         where: {
